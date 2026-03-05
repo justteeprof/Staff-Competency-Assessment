@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Duchess International Hospital | Comprehensive Theatre & Endoscopy Competency Examination</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#eef2f7;margin:0}
+.header{background:#002147;color:#fff;padding:20px;text-align:center}
+.logo{height:60px}
+.container{max-width:1100px;margin:20px auto;background:#fff;padding:30px;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,0.08)}
+h1,h2{color:#002147}
+.section{margin-top:30px;padding-top:20px;border-top:1px solid #ddd}
+.question{margin-bottom:15px}
+button{background:#002147;color:#fff;padding:10px 18px;border:none;border-radius:6px;cursor:pointer}
+button:hover{background:#004080}
+input[type=text],input[type=password]{padding:8px;width:100%;margin-bottom:15px}
+.timer{font-weight:bold;color:#b30000;font-size:18px;text-align:right}
+.hidden{display:none}
+.certificate-preview{border:3px double #002147;padding:40px;text-align:center}
+.footer{text-align:center;font-size:12px;margin-top:40px;color:#777}
+</style>
+</head>
+<body oncopy="return false" oncut="return false" onpaste="return false">
+
+<div class="header">
+<img src="logo.jpeg" class="logo" alt="Duchess Logo">
+<h1>Duchess International Hospital</h1>
+<p>Comprehensive Theatre & Endoscopy Competency Examination</p>
+</div>
+
+<div class="container" id="loginSection">
+<h2>Secure Login</h2>
+<input type="text" id="username" placeholder="Username">
+<input type="password" id="password" placeholder="Password">
+<button onclick="login()">Login to Begin Exam</button>
+<p id="loginError" style="color:red"></p>
+</div>
+
+<div class="container hidden" id="examSection">
+<div class="timer">Time Remaining: <span id="time">90:00</span></div>
+<p><strong>Candidate Name:</strong></p>
+<input type="text" id="candidateName" placeholder="Enter Full Name">
+<div id="quizForm"></div>
+<button onclick="submitExam()">Submit Examination</button>
+<div id="result" style="margin-top:20px;font-weight:bold"></div>
+<button id="downloadBtn" class="hidden" onclick="generatePDF()">Download Institutional Certificate</button>
+</div>
+
+<script>
+
+// =============================
+// SINGLE ATTEMPT CONTROL
+// =============================
+
+function hasCompletedExam(username){
+    return localStorage.getItem("exam_completed_" + username) === "true";
+}
+
+function markExamCompleted(username){
+    localStorage.setItem("exam_completed_" + username, "true");
+}
+
+const validUser = "theatre.manager5";
+const validPass = "duchess2026";
+
+function login(){
+let u=document.getElementById("username").value;
+let p=document.getElementById("password").value;
+
+if(u===validUser && p===validPass){
+
+    if(hasCompletedExam(u)){
+        document.getElementById("loginError").innerText =
+        "This candidate has already completed the competency examination. Multiple attempts are not permitted.";
+        return;
+    }
+
+    document.getElementById("loginSection").classList.add("hidden");
+    document.getElementById("examSection").classList.remove("hidden");
+    startTimer(45*60);
+    generateQuestions();
+
+}else{
+document.getElementById("loginError").innerText="Invalid login credentials.";
+}
+}
+
+function startTimer(duration){
+let timer=duration;
+let display=document.getElementById('time');
+let interval=setInterval(function(){
+let minutes=parseInt(timer/60,10);
+let seconds=parseInt(timer%60,10);
+minutes=minutes<10?"0"+minutes:minutes;
+seconds=seconds<10?"0"+seconds:seconds;
+display.textContent=minutes+":"+seconds;
+if(--timer<0){clearInterval(interval);submitExam();}
+},1000);
+}
+
+const questions = [
+  {q: "What is the main purpose of the WHO Surgical Safety Checklist in theatre?", options: ["Reduce costs", "Ensure team communication and safety checks", "Increase patient throughput", "Record staff attendance"], answer: 1},
+  {q: "Before induction of anesthesia, what must be verified in the pre-operative ’sign-in’?", options: ["Patient identity and consent", "Stock count of instruments", "Cafeteria availability", "Operating theatre temperature"], answer: 0},
+  {q: "Which of the following best describes ‘time-out’ in theatre?", options: ["Break for staff", "Pause before incision to confirm procedure and team roles", "Lunch period", "Post-operative briefing"], answer: 1},
+  {q: "In perioperative care, a nurse’s first priority after anesthesia is:", options: ["Check menu preferences", "Maintain airway patency", "Count instruments", "Clean theatre"], answer: 1},
+  {q: "Skin antisepsis before incision reduces:", options: ["Surgery time", "Staff fatigue", "Surgical site infections", "Costs"], answer: 2},
+  {q: "Standard precautions for infection control include:", options: ["Latex gloves only", "Sterile gowns only", "Hand hygiene and appropriate PPE", "Leaving theatre doors open"], answer: 2},
+  {q: "In theatre, the sterile field must be broken when:", options: ["There is contamination", "Surgeon chooses", "An hour has passed", "Lunch arrives"], answer: 0},
+  {q: "Endoscope high-level disinfection requires:", options: ["Water rinse only", "Alcohol wipe only", "Approved reprocessing after manual cleaning", "Ultraviolet light only"], answer: 2},
+  {q: "Patient fasting guidelines before anesthesia are to prevent:", options: ["Dehydration", "Aspiration during anesthesia", "Pain", "Infection"], answer: 1},
+  {q: "The most appropriate response if a patient has not followed fasting guidelines is to:", options: ["Proceed immediately", "Notify anesthesiology and surgeon", "Cancel surgery alone", "Administer antacids and proceed"], answer: 1},
+  {q: "The theatre manager’s role in stock management should be based on:", options: ["Random ordering", "Par-level and usage tracking", "Vendor preference alone", "Supplies on standby"], answer: 1},
+  {q: "A circulating nurse in theatre is responsible for:", options: ["Maintaining the sterile field", "Assisting scrub nurse in instrument passing", "Managing patient care and documentation", "Replacing surgeon"], answer: 2},
+  {q: "In laparoscopy, safe pneumoperitoneum pressure is generally:", options: ["5 mmHg", "12-15 mmHg", "30 mmHg", "45 mmHg"], answer: 1},
+  {q: "A patient’s surgical count must be performed:", options: ["Only at the end", "Before incision and before closure", "Only on request", "By the anaesthetist"], answer: 1},
+  {q: "Which is a sign of possible CO2 embolism during laparoscopy?", options: ["Clear lung sounds", "Sudden drop in end-tidal CO2", "Improved oxygenation", "Stable vitals"], answer: 1},
+  {q: "If CO2 embolism is suspected, the first nursing action should be to:", options: ["Increase insufflation", "Stop insufflation and alert surgeon", "Record and ignore", "Increase pressure"], answer: 1},
+  {q: "During endoscopy, the nurse must continuously monitor:", options: ["Endoscope dye", "Staff break times", "Patient vital signs and comfort", "Room temperature"], answer: 2},
+  {q: "What is the correct position for a standard colonoscopy?", options: ["Prone", "Right lateral", "Supine", "Left lateral"], answer: 3},
+  {q: "A patient reports chest pain and shortness of breath post-procedure. Primary action is:", options: ["Advise rest", "Assess ABCs (Airway, Breathing, Circulation)", "Give oral fluids", "Dismiss complaint"], answer: 1},
+  {q: "In endoscopy processing, leak testing is done to:", options: ["Check light quality", "Ensure instrument internal integrity", "Assess sedation level", "Measure patient response"], answer: 1},
+  {q: "In theatre leadership, delegation must always be:", options: ["Assigned without supervision", "Clear and appropriate to competence", "Only to senior staff", "Avoided"], answer: 1},
+  {q: "What is the main purpose of incident reporting?", options: ["Punish staff", "Identify areas for improvement and safety", "Inform patients", "Control costs"], answer: 1},
+  {q: "Post-operative pain assessment should be:", options: ["Ignored", "Periodic and documented", "Given only at discharge", "Done by surgeon alone"], answer: 1},
+  {q: "Surgical site infection prevention includes:", options: ["Maintaining asepsis", "Skipping consent", "Rapid turnover only", "Keeping doors open"], answer: 0},
+  {q: "In theatre administration, priority should be:", options: ["Patient safety", "Equipment purchases only", "Coffee breaks", "Paperwork delays"], answer: 0},
+  {q: "Consent must be obtained:", options: ["Only verbal", "Before surgery and documented", "From nurse only", "After procedure"], answer: 1},
+  {q: "Endoscopy sedation monitoring must include:", options: ["Only heart rate", "Respiratory rate, oxygen saturation, and level of consciousness", "Surgeon’s preference only", "None"], answer: 1},
+  {q: "Primary infection control in recovery includes:", options: ["Good hand hygiene", "Room lights dimmed", "Music volume", "Ambient temperature"], answer: 0},
+  {q: "Which instrument issue should halt a procedure?", options: ["Minor scratch", "Leak detected in endoscope", "Clear view", "Extra instrument"], answer: 1},
+  {q: "Surgical fire risk is highest when:", options: ["No alcohol prep present", "Alcohol-based skin prep and electrocautery present", "Water only", "No staff nearby"], answer: 1},
+  {q: "In theatre management, staffing plans must include:", options: ["Only surgeons", "All procedural roles with backups", "Patients’ families", "None"], answer: 1},
+  {q: "What is the main sign of malignant hyperthermia risk intra-op?", options: ["Hypothermia", "Rapid rise in CO2 and temperature", "Low pulse", "Clear skin"], answer: 1},
+  {q: "Which postoperative complication requires urgent assessment?", options: ["Stable vitals", "Severe wound bleeding", "Calm demeanor", "Normal pain"], answer: 1},
+  {q: "For laparoscopic patients, deep vein thrombosis prevention includes:", options: ["Early mobilization and compression devices", "No mobilization", "Ice packs only", "None"], answer: 0},
+  {q: "Endoscopy patient preparation includes:", options: ["Fasting guidelines and consent confirmation", "Only water", "Endoscope cleaning only", "None"], answer: 0},
+  {q: "Theatre environment safety includes:", options: ["Clear walkways and functioning alarms", "Cluttered space", "Door open to public", "Lights off"], answer: 0},
+  {q: "Surgical counts assist in preventing:", options: ["Cost reduction only", "Retained instruments", "Faster turnover", "None"], answer: 1},
+  {q: "In theatre leadership, conflict resolution should be:", options: ["Ignored", "Handled professionally with team", "Delayed", "Avoided"], answer: 1},
+  {q: "Appropriate response to anaphylaxis intra-op is:", options: ["Continue procedure", "Call for help and follow emergency protocol", "Ignore", "Delay response"], answer: 1},
+  {q: "Laparoscopic insufflation should be stopped if:", options: ["Vital signs destabilise", "Everything normal", "Only surgeon prefers", "Lunch break"], answer: 0},
+  {q: "Documentation in theatre should be:", options: ["Accurate and timely", "Written from memory days later", "Ignored", "Only by surgeon"], answer: 0},
+  {q: "Preoperative patient assessment always includes:", options: ["Medical history, medications and allergies", "Only age", "Only weight", "None"], answer: 0},
+  {q: "A team brief before procedures ensures:", options: ["Aligned understanding of plan and risks", "Shorter breaks", "Fewer staff", "No communication"], answer: 0},
+  {q: "Endoscopy quality improvement involves:", options: ["Ignoring feedback", "Reviewing outcomes and reducing complications", "Longer waits only", "Not tracking KPIs"], answer: 1},
+  {q: "When postoperative nausea occurs, nursing priority is:", options: ["Assess and manage per protocol", "Ignore", "Re-operate", "Dismiss patient"], answer: 0}
+];
+
+// OSCE scenarios
+questions.push({q:"During colonoscopy, patient develops sudden tachycardia and abdominal distension. What is your immediate coordinated response?",options:["Continue procedure","Stop procedure and activate emergency protocol","Increase insufflation","Ignore"],answer:1});
+questions.push({q:"CO2 embolism suspected during laparoscopy. What is your first action?",options:["Increase pressure","Stop insufflation and inform team","Close ports","Wait"],answer:1});
+questions.push({q:"Sponge count discrepancy before closure. What is correct action?",options:["Close anyway","Recount and escalate","Ignore","Blame staff"],answer:1});
+questions.push({q:"Endoscope fails leak test. What next?",options:["Use anyway","Send for repair and document","Rinse and use","Ignore"],answer:1});
+questions.push({q:"Theatre fire risk identified from alcohol prep. Correct management?",options:["Proceed immediately","Allow drying time and communicate","Ignore","Turn off lights"],answer:1});
+
+function generateQuestions(){
+let container=document.getElementById('quizForm');
+questions.forEach((item,index)=>{
+let div=document.createElement('div');
+div.classList.add('question');
+div.innerHTML=`<p>${index+1}. ${item.q}</p>`;
+item.options.forEach((opt,i)=>{
+div.innerHTML+=`<label><input type='radio' name='q${index}' value='${i}'> ${opt}</label><br>`;
+});
+container.appendChild(div);
+});
+}
+
+let finalScore=0;
+function submitExam(){
+let score=0;
+questions.forEach((item,index)=>{
+let selected=document.querySelector(`input[name='q${index}']:checked`);
+if(selected && parseInt(selected.value)===item.answer){score++;}
+});
+finalScore=score;
+let percent=(finalScore/questions.length)*100;
+let level="";
+if(percent>=85){level="EXCELLENT – Fully Competent";}
+else if(percent>=70){level="COMPETENT – Independent Practice";}
+else if(percent>=60){level="PARTIALLY COMPETENT – Supervision Required";}
+else{level="NOT COMPETENT – Retraining Required";}
+document.getElementById('downloadBtn').classList.remove('hidden');
+document.getElementById('result').innerHTML=`Final Score: ${score}/50 (${percent.toFixed(1)}%)<br>Competency Level: ${level}`;
+// Lock exam permanently for this user
+markExamCompleted(validUser);
+
+// Disable all inputs after submission
+document.querySelectorAll("input").forEach(el => el.disabled = true);
+// Disable only exam radio inputs
+document.querySelectorAll("input[type='radio']").forEach(el => el.disabled = true);
+
+// Disable submit button only
+document.querySelector("button[onclick='submitExam()']").disabled = true;
+}
+
+async function generatePDF(){
+const { jsPDF } = window.jspdf;
+const doc=new jsPDF();
+let name=document.getElementById('candidateName').value;
+let percent=(finalScore/50)*100;
+let level="";
+if(percent>=85){level="EXCELLENT – Fully Competent";}
+else if(percent>=70){level="COMPETENT – Independent Practice";}
+else if(percent>=60){level="PARTIALLY COMPETENT – Supervision Required";}
+else{level="NOT COMPETENT – Retraining Required";}
+
+// Elegant Certificate Layout
+
+doc.setLineWidth(1.5);
+doc.rect(10,10,190,277);
+doc.setFontSize(22);
+doc.text("DUCHESS INTERNATIONAL HOSPITAL",105,40,null,null,"center");
+doc.setFontSize(16);
+doc.text("DEPARTMENT OF SURGERY",105,50,null,null,"center");
+doc.setFontSize(14);
+doc.text("CERTIFICATE OF PROFESSIONAL COMPETENCE",105,65,null,null,"center");
+doc.setFontSize(12);
+doc.text(`This certifies that`,105,80,null,null,"center");
+doc.setFontSize(16);
+doc.text(name,105,95,null,null,"center");
+doc.setFontSize(12);
+doc.text("has successfully completed the Comprehensive Theatre & Endoscopy Competency Examination.",105,110,null,null,"center");
+doc.text(`Final Score: ${percent.toFixed(1)}%`,105,125,null,null,"center");
+doc.text(`Competency Classification: ${level}`,105,140,null,null,"center");
+doc.text("Assessed by: Dr. ____________________________",20,200);
+doc.text("Signature: ____________________________",20,215);
+doc.text("Date: ____________________________",20,230);
+
+doc.save("Duchess_Competency_Certificate.pdf");
+}
+
+// Anti-cheating: disable right-click
+window.addEventListener('contextmenu',function(e){e.preventDefault();});
+
+window.addEventListener("load", function(){
+    if(hasCompletedExam(validUser)){
+        document.getElementById("loginSection").innerHTML =
+        "<h2>Access Denied</h2><p>This candidate has already completed the competency examination. Re-attempts are not allowed.</p>";
+    }
+});
+</script>
+
+<div class="footer">© Duchess International Hospital | Surgical Excellence & Patient Safety</div>
+
+</body>
+</html>
